@@ -1,12 +1,22 @@
 import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
-from itmo_pirsii_2023_diploma.src.models.base_model import BaseClassifierModel
+from src.models.base_model import BaseClassifierModel
 
 
 class SimpleClassifier(BaseClassifierModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, max_length, n_layers, loss_type, optimizer,
-                 **kwargs):
+    def __init__(
+        self,
+        vocab_size,
+        embedding_dim,
+        hidden_dim,
+        output_dim,
+        max_length,
+        n_layers,
+        loss_type,
+        optimizer,
+        **kwargs
+    ):
         super(SimpleClassifier, self).__init__(loss_type, optimizer)
 
         self.vocab_size = vocab_size

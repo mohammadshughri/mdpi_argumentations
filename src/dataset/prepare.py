@@ -4,6 +4,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+# Use relative import
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.utils import get_annotation_arr
 
 
@@ -14,7 +18,7 @@ def make_dataset(path="./data"):
     anns = []
     iterator = tqdm(os.listdir(path))
     for article in iterator:
-        if not article.endswith('.ann'):
+        if not article.endswith(".tsv"):
             continue
         iterator.set_postfix_str(article)
         text, ann = get_annotation_arr(os.path.join(path, article))
@@ -41,7 +45,9 @@ print(len(articles), len(annotator), len(texts), len(anns))
 print(sum(len(t) for t in texts))
 
 # Convert dataset to pandas DataFrame
-df = pd.DataFrame({"text": texts, "ann": anns, "article": articles, "annotator": annotator})
+df = pd.DataFrame(
+    {"text": texts, "ann": anns, "article": articles, "annotator": annotator}
+)
 # Split sentences to rows
 df = df.explode(["text", "ann"])
 df["ann"] = df["ann"].astype(int)
@@ -52,10 +58,18 @@ df["mask_ann"] = df["ann"].apply(lambda a: 0 if a == 0 else 1)
 test_size, val_size = 0.2, 0.1
 random_state = 42
 
-df_train, df_test = train_test_split(df[["text", "ann", "mask_ann"]], test_size=test_size, random_state=random_state,
-                                     stratify=df["mask_ann"])
-df_train, df_val = train_test_split(df_train, test_size=val_size, random_state=random_state,
-                                    stratify=df_train["mask_ann"])
+df_train, df_test = train_test_split(
+    df[["text", "ann", "mask_ann"]],
+    test_size=test_size,
+    random_state=random_state,
+    stratify=df["mask_ann"],
+)
+df_train, df_val = train_test_split(
+    df_train,
+    test_size=val_size,
+    random_state=random_state,
+    stratify=df_train["mask_ann"],
+)
 
 # Save dataset
 if not os.path.exists("./dataset/sentence"):

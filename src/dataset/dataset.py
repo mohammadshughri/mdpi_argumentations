@@ -34,10 +34,15 @@ class TextClassificationDataset(Dataset):
         sent_ids = []
         sent_att_masks = []
         for sent in text:
-            encoding = self.tokenizer(" ".join(sent), truncation=True, padding='max_length', max_length=self.max_length,
-                                      return_tensors='pt')
-            sent_ids.append(encoding['input_ids'].squeeze())
-            sent_att_masks.append(encoding['attention_mask'].squeeze())
+            encoding = self.tokenizer(
+                " ".join(sent),
+                truncation=True,
+                padding="max_length",
+                max_length=self.max_length,
+                return_tensors="pt",
+            )
+            sent_ids.append(encoding["input_ids"].squeeze())
+            sent_att_masks.append(encoding["attention_mask"].squeeze())
 
         return sent_ids, sent_att_masks, ann
 
@@ -53,7 +58,9 @@ class SentenceDataset(Dataset):
     def from_json(cls, path, tokenizer, max_length, **kwargs):
         dataset = read_from_json(path)
         df = pd.DataFrame(dataset)
-        df["mask_anns"] = df["anns"].apply(lambda a: list(map(lambda s: 0 if s == "0" else 1, a)))
+        df["mask_anns"] = df["anns"].apply(
+            lambda a: list(map(lambda s: 0 if s == "0" else 1, a))
+        )
         text = pd.Series(itertools.chain(*df["texts"]))
         annotation = pd.get_dummies(pd.Series(itertools.chain(*df["mask_anns"])))
         return cls(text, annotation, tokenizer, max_length, **kwargs)
@@ -75,9 +82,20 @@ class SentenceDataset(Dataset):
         text = self.texts[idx]
         ann = self.anns[idx].squeeze()
 
-        encoding = self.tokenizer(text, truncation=True, padding='max_length', max_length=self.max_length,
-                                  return_tensors='pt')
-        input_ids = encoding['input_ids'].squeeze()
-        attention_mask = encoding['attention_mask'].squeeze()
+        # Convert one-hot encoded tensor to class index
+        if ann.dim() > 0:  # If it's a one-hot vector
+            ann = ann.argmax().long()  # Convert to class index as long integer
+        else:
+            ann = ann.long()  # Just ensure it's the right type
+
+        encoding = self.tokenizer(
+            text,
+            truncation=True,
+            padding="max_length",
+            max_length=self.max_length,
+            return_tensors="pt",
+        )
+        input_ids = encoding["input_ids"].squeeze()
+        attention_mask = encoding["attention_mask"].squeeze()
 
         return input_ids, attention_mask, ann

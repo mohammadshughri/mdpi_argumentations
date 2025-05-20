@@ -3,12 +3,22 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from itmo_pirsii_2023_diploma.src.models.base_model import BaseClassifierModel
+from src.models.base_model import BaseClassifierModel
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 
 class RNNClassifier(BaseClassifierModel):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, n_layers, loss_type, optimizer, **kwargs):
+    def __init__(
+        self,
+        vocab_size,
+        embedding_dim,
+        hidden_dim,
+        output_dim,
+        n_layers,
+        loss_type,
+        optimizer,
+        **kwargs
+    ):
         super(RNNClassifier, self).__init__(loss_type, optimizer)
 
         self.vocab_size = vocab_size
@@ -25,11 +35,16 @@ class RNNClassifier(BaseClassifierModel):
     def forward(self, input_ids, attention_mask):
         batch_size = input_ids.size(0)
         embedded = self.embedding(input_ids)
-        packed_embedded = nn.utils.rnn.pack_padded_sequence(embedded, attention_mask.sum(1).cpu(), batch_first=True,
-                                                            enforce_sorted=False)
+        packed_embedded = nn.utils.rnn.pack_padded_sequence(
+            embedded,
+            attention_mask.sum(1).cpu(),
+            batch_first=True,
+            enforce_sorted=False,
+        )
         outputs, _ = self.rnn(packed_embedded)
-        unpacked_outputs, lens_unpacked = nn.utils.rnn.pad_packed_sequence(outputs,
-                                                                           batch_first=True)  # B, T, hidden_dim
+        unpacked_outputs, lens_unpacked = nn.utils.rnn.pad_packed_sequence(
+            outputs, batch_first=True
+        )  # B, T, hidden_dim
         last_outputs = unpacked_outputs[torch.arange(batch_size), lens_unpacked - 1]
         result = self.fc(self.sigmoid(last_outputs))
         return result

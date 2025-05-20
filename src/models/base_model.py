@@ -3,7 +3,8 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from itmo_pirsii_2023_diploma.src.dataset import SentenceDataset
+
+# from itmo_pirsii_2023_diploma.src.dataset import SentenceDataset
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from torch.utils.data import DataLoader
 from transformers import BertForSequenceClassification, AutoTokenizer
@@ -41,12 +42,16 @@ class BaseClassifierModel(pl.LightningModule):
         loss = self.loss(y_hat, y)
         self.log("batch/train/loss", loss, prog_bar=False)
 
-        y_true = y.argmax(axis=1).cpu().detach().numpy()
+        # Handle y as class indices, not one-hot vectors
+        y_true = y.cpu().detach().numpy()  # y is already class indices
         y_pred = y_hat.argmax(axis=1).cpu().detach().numpy()
+
         acc = accuracy_score(y_true, y_pred)
         self.log("batch/train/acc", acc)
 
-        self.training_step_outputs.append({"loss": loss, "y_true": y_true, "y_pred": y_pred})
+        self.training_step_outputs.append(
+            {"loss": loss, "y_true": y_true, "y_pred": y_pred}
+        )
         return loss
 
     def on_train_epoch_end(self):
@@ -56,28 +61,31 @@ class BaseClassifierModel(pl.LightningModule):
         input_ids, attention_mask, y = batch
         y_hat = self.forward(input_ids, attention_mask)
         loss = self.loss(y_hat, y)
-        # self.log("batch/val/loss", loss, prog_bar=False)
 
-        y_true = y.argmax(axis=1).cpu().detach().numpy()
+        # Handle y as class indices, not one-hot vectors
+        y_true = y.cpu().detach().numpy()  # y is already class indices
         y_pred = y_hat.argmax(axis=1).cpu().detach().numpy()
-        # acc = accuracy_score(y_true, y_pred)
-        # self.log("batch/val/acc", acc)
 
-        self.validation_step_outputs.append({"loss": loss, "y_true": y_true, "y_pred": y_pred})
+        self.validation_step_outputs.append(
+            {"loss": loss, "y_true": y_true, "y_pred": y_pred}
+        )
         return loss
 
     def on_validation_epoch_end(self):
         self.on_epoch_end(epoch_type="val")
 
-    def test_step(self, batch):
+    def test_step(self, batch, batch_idx):
         input_ids, attention_mask, y = batch
         y_hat = self.forward(input_ids, attention_mask)
         loss = self.loss(y_hat, y)
 
-        y_true = y.argmax(axis=1).cpu().detach().numpy()
+        # Handle y as class indices, not one-hot vectors
+        y_true = y.cpu().detach().numpy()  # y is already class indices
         y_pred = y_hat.argmax(axis=1).cpu().detach().numpy()
 
-        self.test_step_outputs.append({"loss": loss, "y_true": y_true, "y_pred": y_pred})
+        self.test_step_outputs.append(
+            {"loss": loss, "y_true": y_true, "y_pred": y_pred}
+        )
         return y_pred
 
     def on_test_epoch_end(self):
