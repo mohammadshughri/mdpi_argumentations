@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
+import torch
 from src.models.base_model import BaseClassifierModel
 
 
@@ -33,15 +34,13 @@ class SimpleClassifier(BaseClassifierModel):
         self.relu = nn.ReLU()
 
     def forward(self, input_ids, attention_mask):
-        x = self.embedding(input_ids)
-        if len(x.shape) > 2:
-            bs = x.shape[0]
-            x = F.adaptive_avg_pool1d(x, 1).reshape(bs, -1)
-        else:
-            x = F.adaptive_avg_pool1d(x, 1)
-            x = x.reshape(-1, x.shape[0])
+        x = self.embedding(input_ids)  # Shape: (batch_size, seq_length, embedding_dim)
+
+        # Average pooling across sequence length dimension
+        x = torch.mean(x, dim=1)  # Shape: (batch_size, embedding_dim)
+
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
-        x = self.relu(x)
+        # Remove the final relu - you don't want relu on output for classification
         return x

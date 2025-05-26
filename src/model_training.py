@@ -2,12 +2,12 @@ import pytorch_lightning as pl
 
 
 def get_simple_model(batch_size, vocab_size, max_length, max_epochs, **kwargs):
-    from models.simple_model import SimpleClassifier
+    from src.models.simple_model import SimpleClassifier
 
     params = {
         "max_epochs": max_epochs,
         "batch_size": batch_size,
-        "embedding_dim": 350,
+        "embedding_dim": 110,
         "hidden_dim": 256,
         "output_dim": 2,
         "n_layers": 1,
@@ -18,25 +18,6 @@ def get_simple_model(batch_size, vocab_size, max_length, max_epochs, **kwargs):
     }
     params.update(kwargs)
     return SimpleClassifier(**params), "simple"
-
-
-def get_rnn_model(batch_size, vocab_size, max_length, max_epochs, **kwargs):
-    from src.models.rnn_simple_model import RNNClassifier
-
-    params = {
-        "vocab_size": vocab_size,
-        "max_epochs": max_epochs,
-        "batch_size": batch_size,
-        "embedding_dim": 350,
-        "hidden_dim": 512,
-        "output_dim": 2,
-        "n_layers": 1,
-        "max_length": max_length,
-        "optimizer": {"name": "Adam", "lr": 2e-3},
-        "loss_type": "cross_entropy",
-    }
-    params.update(kwargs)
-    return RNNClassifier(**params), "rnn"
 
 
 def get_lstm_model(batch_size, vocab_size, max_length, max_epochs, **kwargs):
@@ -62,26 +43,6 @@ def get_lstm_model(batch_size, vocab_size, max_length, max_epochs, **kwargs):
     return LSTMClassifier(**params), "lstm"
 
 
-def get_bert_model(batch_size, vocab_size, max_length, max_epochs, **kwargs):
-    from models.bert_model import BERTClassifier
-
-    params = {
-        "vocab_size": vocab_size,
-        "max_epochs": max_epochs,
-        "batch_size": batch_size,
-        "embedding_dim": 350,
-        "hidden_dim": 512,
-        "output_dim": 2,
-        "n_layers": 1,
-        # "max_length": max_length,
-        "optimizer": {"name": "AdamW", "lr": 2e-5},
-        "loss_type": "cross_entropy",
-        "model_name": kwargs.get("model_name", "bert-base-uncased"),
-    }
-    params.update(kwargs)
-    return BERTClassifier(**params), "bert"
-
-
 if __name__ == "__main__":
     from pytorch_lightning.loggers import TensorBoardLogger
     from pytorch_lightning.callbacks import ModelCheckpoint
@@ -103,7 +64,7 @@ if __name__ == "__main__":
     # Set params
     max_length = 110
     batch_size = 64
-    max_epochs = 5
+    max_epochs = 100
     tokenizer_name = "distilbert-base-uncased"
 
     # Load data
@@ -117,12 +78,10 @@ if __name__ == "__main__":
     )
 
     # Get model
-    # model, tag = get_rnn_model(batch_size, vocab_size, max_length, max_epochs, tokenizer_name=tokenizer_name)
-    model, tag = get_lstm_model(
-        batch_size, vocab_size, max_length, max_epochs, tokenizer_name=tokenizer_name
+    # model, tag = get_lstm_model(batch_size, vocab_size, max_length, max_epochs, tokenizer_name=tokenizer_name)
+    model, tag = get_simple_model(
+        batch_size, vocab_size, max_length, max_epochs, model_name=tokenizer_name
     )
-    # model, tag = get_bert_model(batch_size, vocab_size, max_length, max_epochs, model_name=tokenizer_name)
-
     # Configure trainer
     trainer = pl.Trainer(
         max_epochs=max_epochs, logger=TensorBoardLogger("./tb_logs", name=model.name)

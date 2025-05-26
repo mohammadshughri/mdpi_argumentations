@@ -139,3 +139,18 @@ class BaseClassifierModel(pl.LightningModule):
         if optimizer_name == "AdamW":
             return torch.optim.AdamW(self.parameters(), **params)
         raise AttributeError(f"Optimizer {optimizer_name} not found")
+
+    def save_model_to_pth(self, path="model.pth"):
+        """
+        Save the model to a .pth file
+        Args:
+            path (str): Path to save the model to
+        """
+        torch.save(self.state_dict(), path)
+        print(f"Model saved to {path}")
+
+    def on_fit_end(self):
+        """Called at the end of the training process."""
+        # Save model after training is completed
+        model_name = f"{self.name}_model.pth"
+        self.save_model_to_pth(model_name)
